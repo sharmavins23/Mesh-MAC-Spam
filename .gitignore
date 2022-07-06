@@ -3,3 +3,4 @@
 
 # Generated idf.py files
 build
+sdkconfig*
