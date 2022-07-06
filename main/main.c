@@ -19,6 +19,9 @@
 
 // After connecting to WiFi...
 void OnConnected(void *params) {
+    // Spam a series of updates to the server
+    spamUpdates();
+
     // Delete the task after completion
     vTaskDelete(NULL);
 }
@@ -29,12 +32,11 @@ void app_main(void) {
     connectToWiFi();
 
     // Create a task after Wifi completion of connection
-    xTaskCreate(
-        &OnConnected,             // Task entry function
-        "Handle communications",  // Descriptive name for task
-        1024 * 10,                // Number of words to allocate for task stack
-        NULL,                     // Parameters passed to the task
-        5,                        // Task priority (privileges, etc)
-        NULL                      // Pass a handler to the created task
+    xTaskCreate(&OnConnected,             // Task entry function
+                "Handle communications",  // Descriptive name for task
+                1024 * 10,  // Number of words to allocate for task stack
+                NULL,       // Parameters passed to the task
+                5,          // Task priority (privileges, etc)
+                NULL        // Pass a handler to the created task
     );
 }

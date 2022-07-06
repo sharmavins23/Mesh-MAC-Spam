@@ -10,3 +10,9 @@
  *
  */
 void connectToWiFi();
+
+/**
+ * @brief Spams HTTP POSTs to /update/ on the external server with MAC ID
+ *
+ */
+void spamUpdates();
