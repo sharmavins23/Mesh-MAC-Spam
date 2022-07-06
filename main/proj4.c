@@ -66,7 +66,7 @@ esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt) {
 
 static void rest_get() {
     esp_http_client_config_t config_get = {
-        .url = "http://worldclockapi.com/api/json/utc/now",
+        .url = "http://google.com/",
         .method = HTTP_METHOD_GET,
         .cert_pem = NULL,
         .event_handler = client_event_get_handler};
