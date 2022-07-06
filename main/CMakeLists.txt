@@ -9,8 +9,8 @@ idf_component_register(
     INCLUDE_DIRS
         .
     # Certs and the like
-    EMBED_TXTFILES
-        .
+    # EMBED_TXTFILES
+    #    .
     # Libraries required for implementation
     REQUIRES
         nvs_flash

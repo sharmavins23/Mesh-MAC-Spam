@@ -17,8 +17,8 @@
 void performHTTPPOST(char *postData) {
     // Create a new HTTP client
     esp_http_client_config_t config = {
-        .url = "http://vinsdev.ml:8080",  // Server endpoint
-        .method = HTTP_METHOD_POST        // POST connection
+        .url = "http://vinsdev.ml:8080/update",  // Server endpoint
+        .method = HTTP_METHOD_POST               // POST connection
     };
     // Start the HTTP session
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -39,6 +39,9 @@ void performHTTPPOST(char *postData) {
             ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(error));
             break;
         }
+
+        // Delay the POST loop (please do not DDOS your servers)
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 
     // Clean up the HTTP client
