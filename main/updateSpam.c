@@ -32,6 +32,8 @@ void performHTTPPOST(char *postData) {
         // Perform the HTTP POST
         esp_err_t error = esp_http_client_perform(client);
 
+        ESP_LOGI(TAG, "Sent HTTP POST request.");
+
         // If we get an error, break out of the loop
         if (error != ESP_OK) {
             ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(error));
