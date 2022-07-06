@@ -3,6 +3,8 @@ idf_component_register(
     # Source files for all code
     SRCS
         main.c
+        wifiConnect.c
+        updateSpam.c
     # Any included headerfiles
     INCLUDE_DIRS
         .
