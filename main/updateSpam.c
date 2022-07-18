@@ -27,8 +27,10 @@ void performHTTPPOST(char *postData) {
     // Set the request body to the JSON data string
     esp_http_client_set_post_field(client, postData, strlen(postData));
 
-    // Loop until we get an error
-    while (1) {
+    int i = 30;
+
+    // Loop 30 times to spam the server with a MAC ID
+    while (i > 0) {
         // Perform the HTTP POST
         esp_err_t error = esp_http_client_perform(client);
 
@@ -42,6 +44,9 @@ void performHTTPPOST(char *postData) {
 
         // Delay the POST loop (please do not DDOS your servers)
         vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+        // Update the loop
+        i--;
     }
 
     // Clean up the HTTP client
