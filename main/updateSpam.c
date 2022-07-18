@@ -14,6 +14,7 @@
 
 // ===== POST functionality ====================================================
 
+// TODO: Make this a lambda function
 void performHTTPPOST(char *postData) {
     // Create a new HTTP client
     esp_http_client_config_t config = {
