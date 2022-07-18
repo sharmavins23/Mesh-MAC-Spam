@@ -12,6 +12,8 @@
 
 #define TAG "UPDATE SPAM"
 
+#define TASK_TIME_MS 1000
+
 // ===== POST functionality ====================================================
 
 // TODO: Make this a lambda function
@@ -44,7 +46,7 @@ void performHTTPPOST(char *postData) {
         }
 
         // Delay the POST loop (please do not DDOS your servers)
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        vTaskDelay(TASK_TIME_MS / portTICK_PERIOD_MS);
 
         // Update the loop
         i--;
