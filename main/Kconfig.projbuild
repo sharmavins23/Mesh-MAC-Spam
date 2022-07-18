@@ -1,11 +1,43 @@
-menu "WiFi network information"
+menu "(DEV) WiFi network information"
 
-config WIFI_SSID
-    string "Network SSID"
-    default "My network SSID"
+    config WIFI_SSID
+        string "Network SSID"
+        default "My network SSID"
+    
+    config WIFI_PASSWORD
+        string "Network password"
+        default "My network password"
 
-config WIFI_PASSWORD
-    string "Network password"
-    default "My network password"
+endmenu
+
+menu "(DEV) Mesh network configuration"
+
+    choice DEVICE_TYPE
+        bool "Configure the device type"
+        default DEVICE_TYPE_NODE
+        help "Set the device type (ROOT, NODE) for the device."
+
+        config DEVICE_TYPE_ROOT
+            bool "Root device"
+        config DEVICE_TYPE_NODE
+            bool "Leaf device"
+
+    endchoice
+
+    config DEVICE_TYPE
+        int
+        default 1 if DEVICE_TYPE_ROOT
+        default 2 if DEVICE_TYPE_NODE
+
+    config MESH_ID
+        string "Mesh ID"
+        default "My mesh ID"
+        help "Mesh network identification - Keep the same for a mesh. Max length is 6 bytes."
+
+    config MESH_CHANNEL
+        int "Mesh channel"
+        range 1 14
+        default 13
+        help "Mesh network channel - Keep the same for a mesh. Valid values are 1-14."
 
 endmenu
