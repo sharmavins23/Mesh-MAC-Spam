@@ -12,50 +12,54 @@
 
 #define TAG "UPDATE SPAM"
 
-#define TASK_TIME_MS 1000
+// The number of ms to wait between each HTTP POST message
+#define TASK_TIME_MS 100
 
-// ===== POST functionality ====================================================
+// ===== HTTP Client Functionality =============================================
 
-// TODO: Make this a lambda function
-void performHTTPPOST(char *postData) {
+esp_http_client_handle_t setupHTTPClient() {
     // Create a new HTTP client
     esp_http_client_config_t config = {
         .url = "http://vinsdev.ml:8080/update",  // Server endpoint
-        .method = HTTP_METHOD_POST               // POST connection
+        .method = HTTP_METHOD_POST,              // POST connection
     };
+
     // Start the HTTP session
     esp_http_client_handle_t client = esp_http_client_init(&config);
     // Set the request header to specify JSON content towards the server
     esp_http_client_set_header(client, "Content-Type", "application/json");
-    // Set the request body to the JSON data string
+
+    ESP_LOGI(TAG, "HTTP client setup complete.");
+
+    // Return the client object to be used in other functions
+    return client;
+}
+
+void destroyHTTPClient(esp_http_client_handle_t client) {
+    // Close the connection
+    esp_http_client_close(client);
+    // Clean up any other objects
+    esp_http_client_cleanup(client);
+
+    ESP_LOGI(TAG, "HTTP client successfully destroyed.");
+
+    return;
+}
+
+// Note: You are responsible for cleaning up your own POST data
+void performHTTPPOST(esp_http_client_handle_t client, char *postData) {
+    // Set the POST field data
     esp_http_client_set_post_field(client, postData, strlen(postData));
 
-    int i = 30;
+    // Perform the HTTP POST
+    esp_err_t error = esp_http_client_perform(client);
 
-    // Loop 30 times to spam the server with a MAC ID
-    while (i > 0) {
-        // Perform the HTTP POST
-        esp_err_t error = esp_http_client_perform(client);
-
+    // Check for errors
+    if (error != ESP_OK) {
+        ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(error));
+    } else {
         ESP_LOGI(TAG, "Sent HTTP POST request.");
-
-        // If we get an error, break out of the loop
-        if (error != ESP_OK) {
-            ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(error));
-            break;
-        }
-
-        // Delay the POST loop (please do not DDOS your servers)
-        vTaskDelay(TASK_TIME_MS / portTICK_PERIOD_MS);
-
-        // Update the loop
-        i--;
     }
-
-    // Clean up the HTTP client
-    esp_http_client_close(client);
-    esp_http_client_cleanup(client);
-    free(postData);  // Free the memory allocated for the JSON data string
 
     return;
 }
@@ -100,8 +104,23 @@ void spamUpdates() {
     // Create and format the JSON data
     char *postData = createJSON();
 
+    // Set up the HTTP client
+    esp_http_client_handle_t client = setupHTTPClient();
+
     // Send the data as an HTTP POST, looping until we can't send anymore
-    performHTTPPOST(postData);
+    int i = 30;
+    while (i--) {
+        // Perform the HTTP POST request
+        performHTTPPOST(postData);
+
+        // Delay the loop
+        // vTaskDelay(TASK_TIME_MS / portTICK_PERIOD_MS);
+    }
+
+    // Clean up the HTTP client
+    destroyHTTPClient(client);
+    // Free the JSON data
+    free(postData);
 
     return;
 }
