@@ -12,9 +12,6 @@
 
 #define TAG "UPDATE SPAM"
 
-// The number of ms to wait between each HTTP POST message
-#define TASK_TIME_MS 100
-
 // ===== HTTP Client Functionality =============================================
 
 esp_http_client_handle_t setupHTTPClient() {
@@ -111,7 +108,7 @@ void spamUpdates() {
     int i = 30;
     while (i--) {
         // Perform the HTTP POST request
-        performHTTPPOST(postData);
+        performHTTPPOST(client, postData);
 
         // Delay the loop
         // vTaskDelay(TASK_TIME_MS / portTICK_PERIOD_MS);
