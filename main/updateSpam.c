@@ -44,7 +44,10 @@ void destroyHTTPClient(esp_http_client_handle_t client) {
 }
 
 // Note: You are responsible for cleaning up your own POST data
-void performHTTPPOST(esp_http_client_handle_t client, char *postData) {
+void performHTTPPOST(esp_http_client_handle_t client) {
+    // Get the post data
+    char *postData = createJSON();  // Might slow down the HTTP post speed
+
     // Set the POST field data
     esp_http_client_set_post_field(client, postData, strlen(postData));
 
@@ -63,27 +66,115 @@ void performHTTPPOST(esp_http_client_handle_t client, char *postData) {
 
 // ===== JSON formatting =======================================================
 
-// Create a JSON string based on a scraped MAC ID
-char *createJSON() {
-    // Get the ESP's MAC ID
+// // Create a JSON string based on a scraped MAC ID
+// char *createJSON() {
+//     // Get the ESP's MAC ID
+//     uint8_t mac[6];
+//     esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+//     // Convert MAC ID to string
+//     char macString[18];
+//     sprintf(macString,                        // Buffer to place data in
+//             "%02x:%02x:%02x:%02x:%02x:%02x",  // Format string for MAC ID
+//             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]  // MAC ID fields
+//     );
+//     // Log success of MAC ID conversion
+//     ESP_LOGI(TAG, "Gained device MAC: %s", macString);
+
+//     // Create a JSON object based on this
+//     cJSON *json = cJSON_CreateObject();
+//     // Create a new JSON array within this
+//     cJSON *macArray = cJSON_CreateArray();
+//     cJSON_AddItemToObject(json, "deviceIDs", macArray);
+//     // Add the device MAC string into the macArray
+//     cJSON_AddItemToArray(macArray, cJSON_CreateString(macString));
+
+//     // Print this JSON to a character list
+//     char *jsonString = cJSON_Print(json);
+
+//     // Clean up our CJSON object (so as to not lose memory)
+//     cJSON_Delete(json);
+
+//     // Return our created JSON object
+//     return jsonString;
+// }
+
+// Return the ESP's MAC ID as a string
+char *getMACString() {
+    // Read the ESP's MAC ID
     uint8_t mac[6];
     esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
-    // Convert MAC ID to string
+
+    // Convert this value to a string
     char macString[18];
     sprintf(macString,                        // Buffer to place data in
             "%02x:%02x:%02x:%02x:%02x:%02x",  // Format string for MAC ID
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]  // MAC ID fields
     );
+
     // Log success of MAC ID conversion
     ESP_LOGI(TAG, "Gained device MAC: %s", macString);
 
-    // Create a JSON object based on this
+    return macString;
+}
+
+// Return the ESP's current temperature
+float getESPTemperature() {
+    // Generate the temperature sensor
+    temperature_sensor_handle_t temperature_sensor_handle = NULL;
+    temperature_sensor_config_t temperature_sensor_config = {
+        .range_min = 20,
+        .range_max = 50,
+    };
+    ESP_ERROR_CHECK(temperature_sensor_install(&temperature_sensor_config,
+                                               &temperature_sensor_handle));
+
+    // Enable the temperature sensor
+    ESP_ERROR_CHECK(temperature_sensor_enable(temperature_sensor_handle));
+
+    float temperature = 0;
+
+    // Read the temperature in celsius
+    ESP_ERROR_CHECK(temperature_sensor_get_temperature_celsius(
+        temperature_sensor_handle, &temperature));
+
+    // Log the temperature value
+    ESP_LOGI(TAG, "Temperature: %f (*C)", temperature);
+
+    // Disable the temperature sensor
+    ESP_ERROR_CHECK(temperature_sensor_disable(temperature_sensor_handle));
+
+    return temperature;
+}
+
+// Create a JSON string, combining the proper parameters and values
+char *createJSON() {
+    // Create a JSON object
     cJSON *json = cJSON_CreateObject();
-    // Create a new JSON array within this
-    cJSON *macArray = cJSON_CreateArray();
-    cJSON_AddItemToObject(json, "deviceIDs", macArray);
-    // Add the device MAC string into the macArray
-    cJSON_AddItemToArray(macArray, cJSON_CreateString(macString));
+
+    // Add the device's MAC ID
+    char *deviceID = getMACString();
+    cJSON_AddItemToObject(json, "deviceID", cJSON_CreateString(deviceID));
+
+    // Add the device's temperature
+    float temperature = getESPTemperature();
+    cJSON_AddItemToObject(json, "temperature", cJSON_CreateNumber(temperature));
+
+    // Add the size of the free heap
+    uint32_t freeHeapSize = esp_get_free_heap_size();
+    cJSON_AddItemToObject(json, "freeHeapSize",
+                          cJSON_CreateNumber(freeHeapSize));
+
+    // Add the maximum contiguous free heap memory size
+    // ! Note: This is definitely NOT the same value as the max contig size
+    uint32_t maxFreeHeapSize = esp_get_free_internal_heap_size();
+
+    // Get the last reset reason
+    esp_reset_reason_t resetReason = esp_reset_reason_get();
+    // Convert the reset reason to a string
+    char *resetReasonString = esp_reset_reason_to_string(resetReason);
+    // Add the reset reason to the JSON object
+    cJSON_AddItemToObject(json, "resetReason",
+                          cJSON_CreateString(resetReasonString));
 
     // Print this JSON to a character list
     char *jsonString = cJSON_Print(json);
@@ -98,8 +189,8 @@ char *createJSON() {
 // ===== Main functionality ====================================================
 
 void spamUpdates() {
-    // Create and format the JSON data
-    char *postData = createJSON();
+    // // Create and format the JSON data
+    // char *postData = createJSON();
 
     // Set up the HTTP client
     esp_http_client_handle_t client = setupHTTPClient();

@@ -5,17 +5,7 @@ idf_component_register(
         main.c
         wifiConnect.c
         updateSpam.c
-    # Any included headerfiles
     INCLUDE_DIRS
         .
-    # Certs and the like
-    # EMBED_TXTFILES
-    #    .
-    # Libraries required for implementation
-    REQUIRES
-        nvs_flash
-        json
-        esp_http_client
+        include
 )
-
-target_compile_definitions(${COMPONENT_LIB} PRIVATE LV_CONF_INCLUDE_SIMPLE=1)

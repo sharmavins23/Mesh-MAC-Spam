@@ -1,43 +1,125 @@
-menu "(DEV) WiFi network information"
-
-    config WIFI_SSID
-        string "Network SSID"
-        default "My network SSID"
-    
-    config WIFI_PASSWORD
-        string "Network password"
-        default "My network password"
-
-endmenu
-
 menu "(DEV) Mesh network configuration"
 
-    choice DEVICE_TYPE
-        bool "Configure the device type"
-        default DEVICE_TYPE_NODE
-        help "Set the device type (ROOT, NODE) for the device."
+    config MESH_ROUTER_SSID
+        string "Network SSID"
+        default "My network SSID"
+        help
+            The name of the Wifi network.
+    
+    config MESH_ROUTER_PASSWD
+        string "Network password"
+        default "My network password"
+        help
+            The password for the Wifi network.
 
-        config DEVICE_TYPE_ROOT
-            bool "Root device"
-        config DEVICE_TYPE_NODE
-            bool "Leaf device"
+    choice DEVICE_TYPE
+        bool "Configure device type"
+        default DEVICE_TYPE_NODE
+        help
+            Configure the device type
+    
+    config DEVICE_TYPE_ROOT
+       bool "Root device"
+    config DEVICE_TYPE_NODE
+       bool "Leaf device"
 
     endchoice
-
+    
     config DEVICE_TYPE
         int
         default 1 if DEVICE_TYPE_ROOT
         default 2 if DEVICE_TYPE_NODE
-
+    
     config MESH_ID
         string "Mesh ID"
-        default "My mesh ID"
-        help "Mesh network identification - Keep the same for a mesh. Max length is 6 bytes."
-
+            default "123456"
+            help
+                The maximum length is 6 bytes. Mesh network identification,
+                Nodes with the same mesh ID can, communicate with each other.
+    
     config MESH_CHANNEL
-        int "Mesh channel"
+        int "Mesh network channel"
         range 1 14
         default 13
-        help "Mesh network channel - Keep the same for a mesh. Valid values are 1-14."
+        help
+            Mesh network channel.
 
+    choice MESH_AP_AUTHMODE
+        bool "Mesh AP Authentication Mode"
+        default WIFI_AUTH_WPA2_PSK
+        help
+            Authentication mode for the router.
+        
+        config WIFI_AUTH_OPEN
+            bool "Open"
+        config WIFI_AUTH_WPA_PSK
+            bool "WPA-PSK"
+        config WIFI_AUTH_WPA2_PSK
+            bool "WPA2-PSK"
+        config WIFI_AUTH_WPA_WPA2_PSK
+            bool "WPA-WPA2-PSK"
+
+    endchoice
+
+    config MESH_AP_AUTHMODE
+        int
+        default 0 if WIFI_AUTH_OPEN
+        default 2 if WIFI_AUTH_WPA_PSK
+        default 3 if WIFI_AUTH_WPA2_PSK
+        default 4 if WIFI_AUTH_WPA_WPA2_PSK
+        help
+            Authentication mode for the router.
+    
+    config MESH_AP_PASSWD
+        string "Mesh-as-an-AP password"
+        default "MAP_PASSWD"
+        help
+            Password for connecting to the mesh as an AP.
+    
+    config MESH_AP_CONNECTIONS
+        int "Mesh-as-an-AP connection count (mesh devices)"
+        range 1 10
+        default 6
+        help
+            Maximum number of connections allowed to the mesh and utilize it as an AP.
+
+    config MESH_NON_MESH_AP_CONNECTIONS
+        int "Mesh-as-an-AP connection count (non-mesh devices)"
+        range 1 10
+        default 0
+        help
+            Maximum number of non-mesh devices allowed to connect to the mesh and utilize it as an AP.
+
+    config MESH_MAX_LAYER
+        int "Maximum layer count"
+        range 1 25
+        default 6
+        help
+            Maximal number of layers allowed in the mesh network.
+
+    config MESH_ROUTE_TABLE_SIZE
+        int "Mesh routing table maximal size"
+        range 1 300
+        default 50
+        help
+            The number of devices allowed in the network (max is 300).
+
+    config MESH_USE_GLOBAL_DNS_IP
+        bool "Use global DNS IP"
+        default n
+        help
+            Use a fixed DNS server's IP address. If enabled, the root node 
+            advertises the specified DNS address in DHCP packets.By default, it
+            uses DNS records received from the router.
+
+    config MESH_GLOBAL_DNS_IP
+        hex "Global DNS"
+        depends on MESH_USE_GLOBAL_DNS_IP
+        default 0x08080808
+        help
+            The IP address of global DNS server that is used for the internal IP
+            subnet formed by the mesh network. Only works if
+            MESH_USE_GLOBAL_DNS_IP is enabled. Note: The IP address is in
+            platform (not network) format.
+    
 endmenu

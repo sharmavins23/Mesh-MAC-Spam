@@ -13,22 +13,53 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
+#include "mdf_common.h"
+#include "mwifi.h"
 
 #define TAG "COMMS"
 
 // Semaphore for passing control after WiFi and IP initialization
 xSemaphoreHandle connectionSemaphore;
 
-// ===== WiFi connection success event handler =================================
+// ===== Event handlers ========================================================
 
-static void event_handler(void* event_handler_arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data) {
+// WiFi event handler for IP and router connection
+static void wifi_event_handler(void* event_handler_arg,
+                               esp_event_base_t event_base, int32_t event_id,
+                               void* event_data) {
     // If we get the go-ahead to start WiFi connectivity, start it
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
         esp_wifi_connect();
 
     // If we get an IP, we can return control back to the main loop
     if (event_id == IP_EVENT_STA_GOT_IP) xSemaphoreGive(connectionSemaphore);
+}
+
+// Mesh event handler for parent/child connectivity
+static mdf_err_t mesh_event_handler(mdf_event_loop_t event, void* ctx) {
+    MDF_LOGI("Mesh Event Handler: %d", event);
+
+    switch (event) {
+        // If Wifi starts up, log this
+        case MDF_EVENT_MWIFI_STARTED:
+            MDF_LOGI("Mesh started.");
+            break;
+
+        // If a parent connects to the network, log this
+        case MDF_EVENT_MWIFI_PARENT_CONNECTED:
+            MDF_LOGI("Parent connected on station interface.");
+            break;
+
+        // If a parent disconnects from the network, log this
+        case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
+            MDF_LOGI("Parent disconnected on station interface.");
+            break;
+
+        default:
+            break;
+    }
+
+    return MDF_OK;
 }
 
 // ===== Wifi initialization ===================================================
@@ -50,10 +81,10 @@ void initializeWiFi() {
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_config));
     // Register a WiFi event to the event loop (for getting WiFi information)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                               event_handler, NULL));
+                                               wifi_event_handler, NULL));
     // Register an IP event to the event loop (for getting IP)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                               event_handler, NULL));
+                                               wifi_event_handler, NULL));
     // Store WiFi information in system RAM
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 
@@ -68,6 +99,23 @@ void initializeWiFi() {
 
     // Start WiFi according to previously set configurations
     ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+// ===== Mesh initialization ===================================================
+
+// Initialize and error-check all mesh connections
+void initializeMesh() {
+    // Initialize a mesh network with default configurations
+    mwifi_init_config_t mwifi_init_config = MWIFI_INIT_CONFIG_DEFAULT();
+    // Mesh configuration parameters
+    mwifi_config_t mwifi_config = {
+        .channel = CONFIG_MESH_CHANNEL,
+        .mesh_id = CONFIG_MESH_ID,
+        .mesh_type = CONFIG_DEVICE_TYPE,
+    };
+
+    // Initialize the mesh network's event handler for logging purposes
+    MDF_ERROR_ASSERT(mdf_event_loop_init(mesh_event_handler));
 }
 
 void connectToWiFi() {
